@@ -1,0 +1,4 @@
+"DS1302.obj",
+"PROJECT3_main.obj" 
+TO "00757046_PROJECT3" 
+RAMSIZE(256) 

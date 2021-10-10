@@ -1,0 +1,760 @@
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 1   
+
+
+C51 COMPILER V7.08, COMPILATION OF MODULE PROJECT3_MAIN
+OBJECT MODULE PLACED IN PROJECT3_main.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE PROJECT3_main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*-----------------------------------------------
+   2          
+   3            ¦WºÙ¡GDS1302®ÉÄÁ¼Æ½XºÞÅã¥Ü
+   4            ¤º®e¡GDS1302¹ê®É®ÉÄÁ¼Æ½XºÞÅã¥Ü¡A¥uÅã¥Ü®É¶¡¡C¨Ã³q¹L6­Ó«öÁä¥[´î¤p®É¡B¤ÀÄÁ¡B¬íÄÁ
+   5                  
+   6          ------------------------------------------------*/
+   7          #include <reg52.h>                              //¥]§tÀY¤å¥ó¡A¤@¯ë±¡ªp¤£»Ý­n§ï°Ê¡AÀY¤å¥ó¥]§t¯S®í¥\¯à±H¦s¾¹ªº©w¸q
+   8          #include "ds1302.h"
+   9          
+  10          #define DataPort P0                     //©w¸q¼Æ¾ÚºÝ¤f¡Aµ{§Ç¤¤¹J¨ìDataPort¡A«h¥ÎP0´À´«
+  11          #define ArrayKeyPort P1
+  12          #define KeyPort P3                              //©w¸q«öÁäºÝ¤f
+  13          
+  14          sbit LATCH1=P2^2;                               //©w¸qÂê¦s¨Ï¯àºÝ¤f ¬qÂê¦s
+  15          sbit LATCH2=P2^3;                               //                 ¦ìÂê¦s
+  16          sbit SPK=P2^4;                                  //©w¸q­µ¼Ö¿é¥XºÝ¤f
+  17          
+  18          bit ReadTimeFlag;                               //©w¸qÅª®É¶¡¼Ð»x
+  19          bit SetFlag;                                    //§ó·s®É¶¡¼Ð»x¦ì
+  20          unsigned char time_buf2[16];
+  21          unsigned char time_buf3[16];
+  22          
+  23          code unsigned char HOURMUSIC[]=         // ±¡«D±o¤w
+  24          {    
+  25          5,2,1,  1,3,1,  2,3,2,  3,3,2,  2,3,2,  2,3,2,  1,3,1,  7,2,3,  7,2,2,  5,3,4,  5,3,3,
+  26          3,3,4,  5,3,2,  3,3,1,  3,3,1,  3,3,2,  2,2,2,  3,3,2,  4,3,2,  3,3,4,  3,3,3,
+  27          3,3,3,  2,3,3,  2,3,3,  1,3,3,  1,3,2,  6,2,2,  1,3,2,  6,2,2,  2,3,1,  5,3,3,
+  28          5,2,3,  5,2,3,  6,2,3,  1,3,3,  1,3,3,  6,2,3,  3,3,3,  1,3,2,  1,3,3,  0,0,0
+  29          };
+  30          code unsigned char DAYMUSIC[]=          // Happy Birthday to You
+  31          {    
+  32          5,1,3,  5,1,3,  6,1,2,  5,1,2,  1,2,2,  7,1,2,
+  33          5,1,3,  5,1,3,  6,1,2,  5,1,2,  2,2,2,  1,2,2,
+  34          5,1,3,  5,1,3,  5,2,2,  3,2,2,  1,2,2,  7,1,2,  6,1,2,
+  35          4,2,3,  4,2,4,  3,2,2,  1,2,2,  2,2,2,  1,2,2,
+  36          };
+  37          code unsigned char AlARMMUSIC[]=        // ¶Â¤H©ï´Ã
+  38          {
+  39          6,1,2,          6,1,3,          3,2,3,          2,2,2,          1,2,2,    
+  40          7,1,2,          7,1,3,          7,1,3,          2,2,2,          1,2,3,          7,1,3, 
+  41          6,1,2,          6,1,3,          1,3,3,          7,2,3,          1,3,3,          7,2,3,          1,3,3,
+  42          6,1,2,          6,1,3,          1,3,3,          7,2,3,          1,3,3,          7,2,3,          1,3,3,
+  43          
+  44          1,2,3,          1,2,3,          1,2,3,          1,2,3,          3,2,3,          3,2,3,          3,2,3,          3,2,3,    
+  45          2,2,3,          2,2,3,          2,2,3,          2,2,3,          5,2,3,          5,2,3,          5,2,3,          5,2,3,
+  46          6,2,3,          6,2,3,          6,2,3,          6,2,3,          6,2,3,          6,2,3,          6,2,3,          6,2,3,
+  47          6,2,3,          6,2,3,          6,2,3,          6,2,3,          2,2,3,          1,2,3,          7,1,3,          5,1,3,
+  48          
+  49          6,1,2,          6,1,3,          3,2,3,          2,2,2,          1,2,2,    
+  50          7,1,2,          7,1,3,          7,1,3,          2,2,2,          1,2,3,          7,1,3, 
+  51          6,1,2,          6,1,3,          1,3,3,          7,2,3,          1,3,3,          7,2,3,          1,3,3,
+  52          6,1,2,          6,1,3,          1,3,3,          7,2,3,          1,3,3,          7,2,3,          1,3,3,          0,0,0   
+  53          };
+  54          /*code unsigned char MUSIC[]=           // ¥@¤W¥u¦³¶ý¶ý¦n
+  55          {    
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 2   
+
+  56          6,2,3,          5,2,1,          3,2,2,          5,2,2,    1,3,2,    6,2,1,    5,2,1,
+  57          6,2,4,          3,2,2,      5,2,1,      6,2,1,    5,2,2,        3,2,2,    1,2,1,
+  58          6,1,1,          5,2,1,      3,2,1,              2,2,4,    2,2,3,        3,2,1,    5,2,2,
+  59          5,2,1,          6,2,1,      3,2,2,              2,2,2,    1,2,4,        5,2,3,    3,2,1,
+  60          2,2,1,          1,2,1,      6,1,1,              1,2,1,    5,1,6,        0,0,0 
+  61          };*/
+  62          // ­µ¶¥?²vªí °ª¤K¦ì
+  63          code unsigned char FREQH[]=
+  64          {       //1,2,3,4,5,6,7,8,i
+  65                  0xF2,0xF3,0xF5,0xF5,0xF6,0xF7,0xF8, 
+  66                  0xF9,0xF9,0xFA,0xFA,0xFB,0xFB,0xFC,
+  67                  0xFC,0xFC,0xFD,0xFD,0xFD,0xFD,0xFE,
+  68                  0xFE,0xFE,0xFE,0xFE,0xFE,0xFE,0xFF,
+  69          };
+  70          
+  71          // ­µ¶¥?²vªí §C¤K¦ì
+  72          code unsigned char FREQL[]=
+  73          {       //1,2,3,4,5,6,7,8,i
+  74                  0x3D,0xBD,0x14,0xB1,0xD0,0xD1,0xB5,
+  75                  0x1E,0xDE,0x8A,0xD8,0x68,0xE8,0x5A,
+  76                  0x8F,0xEE,0x45,0x6C,0xB4,0xF4,0x2D, 
+  77                  0x47,0x77,0xA2,0xB6,0xDA,0xFA,0x16,
+  78          };
+  79          
+  80          unsigned char code freq[][2]=
+  81          {
+  82                  0xF2,0x3D,                      //  1 ( 262 Hz L_Do)
+  83                  0xF3,0xBD,                      //  2 ( 294 Hz L_Re)   
+  84                  0xF5,0x14,                      //  3 ( 329 Hz L_Mi)    
+  85                  0xF5,0xB1,                      //  4 ( 349 Hz L_Fa     
+  86                  0xF6,0xD0,                      //  5 ( 392 Hz L_So)     
+  87                  0xF7,0xD1,                      //  6 ( 440 Hz L_La)      
+  88                  0xF8,0xB5,                      //  7 ( 493 Hz L_Si)
+  89                  0xF9,0x1E,                      //  8 ( 523 Hz M_Do) 
+  90          
+  91                  0xF9,0x1E,                      //  9 ( 523 Hz M_Do)
+  92                  0xF9,0xDE,                      // 10 ( 587 Hz M_Re)   
+  93                  0xFA,0x8A,                      // 11 ( 659 Hz M_Mi)    
+  94                  0xFA,0xD8,                      // 12 ( 698 Hz M_Fa     
+  95                  0xFB,0x68,                      // 13 ( 784 Hz M_So)     
+  96                  0xFB,0xE8,                      // 14 ( 880 Hz M_La)      
+  97                  0xFC,0x5A,                      // 15 ( 988 Hz M_Si)
+  98                  0xFC,0x8F,                      // 16 (1047 Hz H_Do) 
+  99          
+ 100                  0xFC,0x8F,                      // 17 (1047 Hz H_Do)
+ 101                  0xFC,0xEF,                      // 18 (1175 Hz H_Re)   
+ 102                  0xFD,0x45,                      // 19 (1319 Hz H_Mi)    
+ 103                  0xFD,0x6C,                      // 20 (1397 Hz H_Fa     
+ 104                  0xFD,0xB4,                      // 21 (1568 Hz H_So)     
+ 105                  0xFD,0xF4,                      // 22 (1760 Hz H_La)      
+ 106                  0xFE,0x2D,                      // 23 (1976 Hz H_Si)
+ 107                  0xFE,0x47,                      // 24 (2093 Hz HH_Do) 
+ 108          };
+ 109          
+ 110          unsigned char code dofly_DuanMa[10]={0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f};// ?¥Ü¬q?­È0~9
+ 111          unsigned char code dofly_WeiMa[]={0xfe,0xfd,0xfb,0xf7,0xef,0xdf,0xbf,0x7f};//¤À???¬Û?ªº??ºÞ?«G,§Y¦ì?
+ 112          unsigned char TempData[8];              //Àx¦sÅã¥Ü­Èªº¥þ§½ÅÜ¶q
+ 113          unsigned char Timer0_H, Timer0_L, Time;
+ 114          
+ 115          void DelayUs2x(unsigned char t);//us¯Å©µ®É¨ç¼ÆÁn©ú 
+ 116          void DelayMs(unsigned char t);  //ms¯Å©µ®É
+ 117          void Display(unsigned char FirstBit,unsigned char Num);//¼Æ¾ÚºÞÅã¥Ü¨ç¼Æ
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 3   
+
+ 118          unsigned char KeyScan(void);    //Áä½L±½´y
+ 119          void Init_Timer0(void);                 //©w®É¾¹ªì©l¤Æ
+ 120          void Init_Timer1(void);                 //©w®É¾¹ªì©l¤Æ
+ 121          void UART_Init(void);                   //UARTªì©l¤Æ
+ 122          void Song(void);
+ 123          void DaysReportMusic(void);
+ 124          void HoursReportMusic(void);
+ 125          void AlarmClockMusic(void);
+ 126          /*------------------------------------------------
+ 127                              ¥D¨ç¼Æ
+ 128          ------------------------------------------------*/
+ 129          void main (void)
+ 130          {
+ 131   1              unsigned char i,num,displaynum;                 
+ 132   1      
+ 133   1              Init_Timer0();
+ 134   1              Init_Timer1();
+ 135   1              Ds1302_Init();
+ 136   1              //UART_Init();
+ 137   1              while (1)                               //¥D´`Àô
+ 138   1              {
+ 139   2                      if(SetFlag)                     //¦pªG±µ¦¬¨ì¦ê¤f«H®§«h§ó·s®ÉÄÁ
+ 140   2                      {
+ 141   3                              for(i = 0; i < 8; i++)
+ 142   3                              {
+ 143   4                                      time_buf1[i] = time_buf2[2*i]*10 + time_buf2[2*i+1];
+ 144   4                              }                                       //¼Æ¾Ú¾ã¦X¡A¦p¨â­Ó¼Æ¦r¡A1©M5¾ã¦X¦¨15
+ 145   3                              Ds1302_Write_Time();
+ 146   3                              SetFlag = 0;            //®ÉÄÁ«H®§§ó·s«á¼Ð»x¦ì²M¹s
+ 147   3                      }
+ 148   2      
+ 149   2                      /*if(ClockSetFlag)              //¦pªG±µ¦¬¨ì¦ê¤f«H®§«h§ó·s®É¾xÄÁ
+ 150   2                      {
+ 151   2                              for(i = 0; i < 8; i++)
+ 152   2                              {
+ 153   2                                      time_buf1[i] = time_buf2[2*i]*10 + time_buf2[2*i+1];
+ 154   2                              }                                       //¼Æ¾Ú¾ã¦X¡A¦p¨â­Ó¼Æ¦r¡A1©M5¾ã¦X¦¨15
+ 155   2                              Ds1302_Write_Time();
+ 156   2                              SetFlag = 0;            //®ÉÄÁ«H®§§ó·s«á¼Ð»x¦ì²M¹s
+ 157   2                      }*/
+ 158   2      
+ 159   2                      if(time_buf1[4] == 0 && time_buf1[5] == 0 && time_buf1[6] == 0)
+ 160   2                      {
+ 161   3                              DaysReportMusic();
+ 162   3                      }
+ 163   2                      else if(time_buf1[5] == 0 && time_buf1[6] == 0)
+ 164   2                      {
+ 165   3                              HoursReportMusic();
+ 166   3                      }
+ 167   2                      else if(time_buf1[4] == 21 && time_buf1[5] == 38 && time_buf1[6] == 49)
+ 168   2                      {
+ 169   3                              AlarmClockMusic();
+ 170   3                      }
+ 171   2      
+ 172   2                      //if(time_buf1[4] == time_buf3[4] && time_buf1[5] == time_buf3[5] && time_buf1[6] == time_buf3[6])
+ 173   2                      //{
+ 174   2                      //      AlarmClockMusic();
+ 175   2                      //}
+ 176   2      
+ 177   2                      num = KeyScan();
+ 178   2      
+ 179   2                      if(displaynum == 0)             //®ÉÄÁ¼Ò¦¡
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 4   
+
+ 180   2                      {       
+ 181   3                              switch(num)
+ 182   3                          {
+ 183   4                                      case 1: time_buf1[4]++;                                 // HOUR++
+ 184   4                                                      if(time_buf1[4] == 24)
+ 185   4                                                      {
+ 186   5                                                              time_buf1[4] = 0;
+ 187   5                                                      }    
+ 188   4                                              Ds1302_Write_Time();
+ 189   4                                                      break;          
+ 190   4              
+ 191   4                                      case 2: time_buf1[4]--;                                 // HOUR--
+ 192   4                                                      if(time_buf1[4] == 255)
+ 193   4                                                      {
+ 194   5                                                              time_buf1[4] = 23;  
+ 195   5                                                      }
+ 196   4                                              Ds1302_Write_Time();
+ 197   4                                                      break;
+ 198   4              
+ 199   4                                      case 3: time_buf1[5]++;                                 // MINUTE++
+ 200   4                                                      if(time_buf1[5] == 60)
+ 201   4                                                      {
+ 202   5                                                              time_buf1[5] = 0;
+ 203   5                                                              time_buf1[4]++;
+ 204   5                                                              //HoursReportMusic();
+ 205   5                                                      } 
+ 206   4         
+ 207   4                                              Ds1302_Write_Time();
+ 208   4                                                      break;
+ 209   4              
+ 210   4                                      case 4: time_buf1[5]--;                                 // MINUTE--
+ 211   4                                                      if(time_buf1[5] == 255)
+ 212   4                                                      {
+ 213   5                                                              time_buf1[5] = 59;
+ 214   5                                                              time_buf1[4]--;
+ 215   5                                                      }     
+ 216   4                                              Ds1302_Write_Time();
+ 217   4                                                      break;
+ 218   4              
+ 219   4                                      case 5: time_buf1[6]++;                                 // SECOND++
+ 220   4                                                      if(time_buf1[6] == 60)
+ 221   4                                                      {
+ 222   5                                                              time_buf1[6] = 0;
+ 223   5                                                              time_buf1[5]++;
+ 224   5                                                              if(time_buf1[5] == 60)
+ 225   5                                                              {
+ 226   6                                                                      time_buf1[5] = 0;
+ 227   6                                                                      time_buf1[4]++;
+ 228   6                                                                      //HoursReportMusic();
+ 229   6                                                              }
+ 230   5                                                      }     
+ 231   4                                              Ds1302_Write_Time();
+ 232   4                                                      break;
+ 233   4              
+ 234   4                                      case 6: time_buf1[6]--;                                 // SECOND--
+ 235   4                                                      if(time_buf1[6] == 255)
+ 236   4                                                      {
+ 237   5                                                              time_buf1[6] = 59;
+ 238   5                                                              time_buf1[5]--;
+ 239   5                                                              if(time_buf1[5] == -1)
+ 240   5                                                              {
+ 241   6                                                                      time_buf1[5] = 59;
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 5   
+
+ 242   6                                                                      time_buf1[4]--;
+ 243   6                                                              }
+ 244   5                                                      }     
+ 245   4                                              Ds1302_Write_Time();
+ 246   4                                                      break;
+ 247   4              
+ 248   4                                      case 7: displaynum++;
+ 249   4                                                      if(displaynum == 4)
+ 250   4                                                              displaynum = 0;
+ 251   4                                                      break;
+ 252   4      
+ 253   4                                      case 8: time_buf3[4] = 21;
+ 254   4                                                      time_buf3[5] = 38;
+ 255   4                                                      time_buf3[6] = 49;
+ 256   4                                                      break;
+ 257   4              
+ 258   4                                      default:break;
+ 259   4                              }
+ 260   3                      }
+ 261   2                      else if(displaynum == 1)                //¤é´Á¼Ò¦¡
+ 262   2                      {
+ 263   3                              switch(num)
+ 264   3                          {
+ 265   4                                      case 1: time_buf1[1]++;                                 // YEAR++
+ 266   4                                                      if(time_buf1[1] == 99)
+ 267   4                                                      {
+ 268   5                                                              time_buf1[1] = 0;
+ 269   5                                                      }    
+ 270   4                                              Ds1302_Write_Time();
+ 271   4                                                      break;          
+ 272   4              
+ 273   4                                      case 2: time_buf1[1]--;                                 // YEAR--
+ 274   4                                                      if(time_buf1[1] == 255)
+ 275   4                                                      {
+ 276   5                                                              time_buf1[1] = 99;  
+ 277   5                                                      }
+ 278   4                                              Ds1302_Write_Time();
+ 279   4                                                      break;
+ 280   4              
+ 281   4                                      case 3: time_buf1[2]++;                                 // MONTH++
+ 282   4                                                      if(time_buf1[2] == 13)
+ 283   4                                                      {
+ 284   5                                                              time_buf1[2] = 1;
+ 285   5                                                              time_buf1[1]++;
+ 286   5                                                      }     
+ 287   4                                              Ds1302_Write_Time();
+ 288   4                                                      break;
+ 289   4              
+ 290   4                                      case 4: time_buf1[2]--;                                 // MONTH--
+ 291   4                                                      if(time_buf1[2] == 0)
+ 292   4                                                      {
+ 293   5                                                              time_buf1[2] = 12;
+ 294   5                                                              time_buf1[1]--;
+ 295   5                                                      }     
+ 296   4                                              Ds1302_Write_Time();
+ 297   4                                                      break;
+ 298   4              
+ 299   4                                      case 5: time_buf1[3]++;                                 // DATE++
+ 300   4                                                      time_buf1[7]++;
+ 301   4                                                      if(time_buf1[3] == 32)
+ 302   4                                                      {
+ 303   5                                                              time_buf1[3] = 1;
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 6   
+
+ 304   5                                                              time_buf1[2]++;
+ 305   5                                                              if(time_buf1[2] == 13)
+ 306   5                                                              {
+ 307   6                                                                      time_buf1[2] = 1;
+ 308   6                                                                      time_buf1[1]++;
+ 309   6                                                              }
+ 310   5                                                      }
+ 311   4                                                      if(time_buf1[7] == 8)
+ 312   4                                                      {
+ 313   5                                                              time_buf1[7] = 1;
+ 314   5                                                      }
+ 315   4                                              Ds1302_Write_Time();
+ 316   4                                                      break;
+ 317   4              
+ 318   4                                      case 6: time_buf1[3]--;                                 // DATE--
+ 319   4                                                      time_buf1[7]--;
+ 320   4                                                      if(time_buf1[3] == 0)
+ 321   4                                                      {
+ 322   5                                                              time_buf1[3] = 31;
+ 323   5                                                              time_buf1[2]--;
+ 324   5                                                              if(time_buf1[2] == 0)
+ 325   5                                                              {
+ 326   6                                                                      time_buf1[2] = 12;
+ 327   6                                                                      time_buf1[1]--;
+ 328   6                                                              }
+ 329   5                                                      }
+ 330   4                                                      if(time_buf1[7] == 0)
+ 331   4                                                      {
+ 332   5                                                              time_buf1[7] = 7;
+ 333   5                                                      }        
+ 334   4                                              Ds1302_Write_Time();
+ 335   4                                                      break;
+ 336   4              
+ 337   4                                      case 7: displaynum++;
+ 338   4                                                      if(displaynum == 4)
+ 339   4                                                              displaynum = 0;
+ 340   4                                                      break;
+ 341   4              
+ 342   4                                      default:break;
+ 343   4                              }
+ 344   3                      }
+ 345   2                      else if(displaynum == 2)                //¬P´Á´X¼Ò¦¡
+ 346   2                      {
+ 347   3                              switch(num)
+ 348   3                          {
+ 349   4                                      case 5: time_buf1[7]++;                                 // DATE++
+ 350   4                                                      if(time_buf1[7] == 8)
+ 351   4                                                      {
+ 352   5                                                              time_buf1[7] = 1;
+ 353   5                                                      }     
+ 354   4                                              Ds1302_Write_Time();
+ 355   4                                                      break;
+ 356   4              
+ 357   4                                      case 6: time_buf1[7]--;                                 // DATE--
+ 358   4                                                      if(time_buf1[7] == 0)
+ 359   4                                                      {
+ 360   5                                                              time_buf1[7] = 7;
+ 361   5                                                      }     
+ 362   4                                              Ds1302_Write_Time();
+ 363   4                                                      break;
+ 364   4              
+ 365   4                                      case 7: displaynum++;
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 7   
+
+ 366   4                                                      if(displaynum == 4)
+ 367   4                                                              displaynum = 0;
+ 368   4                                                      break;
+ 369   4              
+ 370   4                                      default:break;
+ 371   4                              }
+ 372   3                              
+ 373   3                      }
+ 374   2                      else if(displaynum == 3)                                                
+ 375   2                      {
+ 376   3                              if(num == 7)
+ 377   3                              {
+ 378   4                                      displaynum++;
+ 379   4                                      if(displaynum == 4)
+ 380   4                                              displaynum = 0;
+ 381   4                              }
+ 382   3                              
+ 383   3                      }
+ 384   2              
+ 385   2                      if(ReadTimeFlag == 1)
+ 386   2                      {
+ 387   3                              ReadTimeFlag = 0;
+ 388   3                              Ds1302_Read_Time();
+ 389   3                              
+ 390   3                              switch(displaynum)
+ 391   3                              {
+ 392   4                                      case 0: TempData[0]=dofly_DuanMa[time_buf1[4]/10];//?   //?Õuªº??¡A
+ 393   4                                                      TempData[1]=dofly_DuanMa[time_buf1[4]%10];//¦]§Ú?ªö¥Î??ºÞ0~9ªº?¥Ü,??Õu¤À?
+ 394   4                                                      TempData[2]=0x40;                                                       //¥[¤J"-"
+ 395   4                                                      TempData[3]=dofly_DuanMa[time_buf1[5]/10];//¤À
+ 396   4                                                      TempData[4]=dofly_DuanMa[time_buf1[5]%10];
+ 397   4                                                      TempData[5]=0x40;
+ 398   4                                                      TempData[6]=dofly_DuanMa[time_buf1[6]/10];//¬í
+ 399   4                                                      TempData[7]=dofly_DuanMa[time_buf1[6]%10];
+ 400   4                                                      break;
+ 401   4      
+ 402   4                                      case 1: TempData[0]=dofly_DuanMa[time_buf1[1]/10];//¦~                  
+ 403   4                                                      TempData[1]=dofly_DuanMa[time_buf1[1]%10];
+ 404   4                                                      TempData[2]=0x40;                                                       //¥[¤J"-"
+ 405   4                                                      TempData[3]=dofly_DuanMa[time_buf1[2]/10];//¤ë
+ 406   4                                                      TempData[4]=dofly_DuanMa[time_buf1[2]%10];
+ 407   4                                                      TempData[5]=0x40;
+ 408   4                                                      TempData[6]=dofly_DuanMa[time_buf1[3]/10];//¤é
+ 409   4                                                      TempData[7]=dofly_DuanMa[time_buf1[3]%10];
+ 410   4                                                      break;
+ 411   4      
+ 412   4                                      case 2: TempData[0]=0x40;                               
+ 413   4                                                      TempData[1]=dofly_DuanMa[time_buf1[7]%10];//©P
+ 414   4                                                      TempData[2]=0x40;       //¥[¤J"-"
+ 415   4                                                      TempData[3]=0;
+ 416   4                                                      TempData[4]=0;
+ 417   4                                                      TempData[5]=0;
+ 418   4                                                      TempData[6]=dofly_DuanMa[time_buf1[6]/10];//¬í
+ 419   4                                                      TempData[7]=dofly_DuanMa[time_buf1[6]%10];      
+ 420   4                                                      break;
+ 421   4                                      case 3: TempData[0]=0;                          
+ 422   4                                                      TempData[1]=0;
+ 423   4                                                      TempData[2]=0;
+ 424   4                                                      TempData[3]=0;
+ 425   4                                                      TempData[4]=0;
+ 426   4                                                      TempData[5]=0;
+ 427   4                                                      TempData[6]=0;
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 8   
+
+ 428   4                                                      TempData[7]=0;  
+ 429   4                                                      break;                     
+ 430   4                              }
+ 431   3      
+ 432   3                      }       
+ 433   2        }
+ 434   1      }
+ 435          /*------------------------------------------------
+ 436           uS©µ?¨ç?¡A§t¦³?¤J?? unsigned char t¡A?ªð¦^­È
+ 437           unsigned char ¬O©w??²Å?¦r²Å?¶q¡A¨ä­Èªº­S?¬O
+ 438           0~255 ?¨½¨Ï¥Î´¹®¶12M¡AºëÚÌ©µ??¨Ï¥Î??,¤j­P©µ?
+ 439           ?«×¦p¤U T=tx2+5 uS 
+ 440          ------------------------------------------------*/
+ 441          void DelayUs2x(unsigned char t)
+ 442          {   
+ 443   1              while(--t);
+ 444   1      }
+ 445          /*------------------------------------------------
+ 446           mS©µ?¨ç?¡A§t¦³?¤J?? unsigned char t¡A?ªð¦^­È
+ 447           unsigned char ¬O©w??²Å?¦r²Å?¶q¡A¨ä­Èªº­S?¬O
+ 448           0~255 ?¨½¨Ï¥Î´¹®¶12M¡AºëÚÌ©µ??¨Ï¥Î??
+ 449          ------------------------------------------------*/
+ 450          void DelayMs(unsigned char t)
+ 451          {
+ 452   1              while(t--)
+ 453   1              {
+ 454   2                      //¤j­P©µ¿ð1mS
+ 455   2                      DelayUs2x(245);
+ 456   2                      DelayUs2x(245);
+ 457   2              }
+ 458   1      }
+ 459          /*------------------------------------------------
+ 460           ?¥Ü¨ç?¡A¥Î¤_???´y??ºÞ
+ 461           ?¤J?? FirstBit ªí¥Ü»Ý­n?¥Üªº²Ä¤@¦ì¡A¦p?­È2ªí¥Ü?²Ä¤T???ºÞ?©l?¥Ü
+ 462           ¦p?¤J0ªí¥Ü?²Ä¤@??¥Ü¡C
+ 463           Numªí¥Ü»Ý­n?¥Üªº¦ì?¡A¦p»Ý­n?¥Ü99?¦ì?­È??­È?¤J2
+ 464          ------------------------------------------------*/
+ 465          void Display(unsigned char FirstBit,unsigned char Num)
+ 466          {
+ 467   1              static unsigned char i=0;
+ 468   1                
+ 469   1      
+ 470   1              DataPort=0;   //²MªÅ?Õu¡A¨¾¤î¦³¥æ´À­«¼v
+ 471   1          LATCH1=1;     //¬q?¦s
+ 472   1          LATCH1=0;
+ 473   1      
+ 474   1          DataPort=dofly_WeiMa[i+FirstBit]; //¨ú¦ì? 
+ 475   1          LATCH2=1;     //¦ì?¦s
+ 476   1          LATCH2=0;
+ 477   1      
+ 478   1          DataPort=TempData[i]; //¨ú?¥Ü?Õu¡A¬q?
+ 479   1          LATCH1=1;     //¬q?¦s
+ 480   1          LATCH1=0;
+ 481   1             
+ 482   1              i++;
+ 483   1          if(i==Num)
+ 484   1                      i=0;
+ 485   1      
+ 486   1      
+ 487   1      }
+ 488          /*------------------------------------------------
+ 489                                  ºq¦±³B²z¨ç¼Æ
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 9   
+
+ 490          ------------------------------------------------*/
+ 491          void delayDay(unsigned char t)
+ 492          {
+ 493   1          unsigned char i;
+ 494   1              for(i=0;i<t;i++)
+ 495   1                  DelayMs(150);
+ 496   1          TR0 = 0;
+ 497   1              //ET1 = 1;                      // ©w®É¾¹¤¤Â_¥´¶}
+ 498   1      }
+ 499          
+ 500          void delayHour(unsigned char t)
+ 501          {
+ 502   1          unsigned char i;
+ 503   1              for(i=0;i<t;i++)
+ 504   1                  DelayMs(80);
+ 505   1          TR0 = 0;
+ 506   1              //ET1 = 1;                      // ©w®É¾¹¤¤Â_¥´¶}
+ 507   1      }
+ 508          
+ 509          void delayAlarm(unsigned char t)
+ 510          {
+ 511   1          unsigned char i;
+ 512   1              for(i=0;i<t;i++)
+ 513   1                  DelayMs(70);
+ 514   1          TR0 = 0;
+ 515   1              //ET1 = 1;                      // ©w®É¾¹¤¤Â_¥´¶}
+ 516   1      }
+ 517          
+ 518          void Song()
+ 519          {
+ 520   1              TH0 = Timer0_H;//?­È©w?¾¹??¡A?©w?²v
+ 521   1              TL0 = Timer0_L;
+ 522   1              TR0 = 1;       //¥´?©w?¾¹
+ 523   1              //ET1 = 0;                      // ©w®É¾¹¤¤Â_¥´¶}
+ 524   1              //delay(Time); //©µ?©Ò»Ý­nªº?©ç                      
+ 525   1      }
+ 526          
+ 527          void DaysReportMusic()
+ 528          {
+ 529   1              unsigned char i, k;
+ 530   1      
+ 531   1              i = 0;  
+ 532   1              while(i < 73)
+ 533   1          {         //­µ????«× ¡A°Û§¹??¦A?        
+ 534   2                  k = DAYMUSIC[i] + 7 * DAYMUSIC[i+1] - 1;//¥h­µ²Å®¶??²v©Ò»Ý?Õu
+ 535   2                  Timer0_H = FREQH[k];
+ 536   2                  Timer0_L = FREQL[k];
+ 537   2                  Time = DAYMUSIC[i+2];          //?©ç??
+ 538   2                  i = i + 3;
+ 539   2                  Song();
+ 540   2                      delayDay(Time);
+ 541   2         }
+ 542   1      }
+ 543          
+ 544          void HoursReportMusic()
+ 545          {
+ 546   1              unsigned char i, k;
+ 547   1      
+ 548   1              i = 0;  
+ 549   1              while(i < 121)
+ 550   1          {         //­µ????«× ¡A°Û§¹??¦A?        
+ 551   2                  k = HOURMUSIC[i] + 7 * HOURMUSIC[i+1] - 1;//¥h­µ²Å®¶??²v©Ò»Ý?Õu
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 10  
+
+ 552   2                  Timer0_H = FREQH[k];
+ 553   2                  Timer0_L = FREQL[k];
+ 554   2                  Time = HOURMUSIC[i+2];          //?©ç??
+ 555   2                  i = i + 3;
+ 556   2                  Song();
+ 557   2                      delayHour(Time);
+ 558   2         }
+ 559   1      }
+ 560          
+ 561          void AlarmClockMusic()
+ 562          {
+ 563   1              unsigned char i, k;
+ 564   1      
+ 565   1              i = 0;  
+ 566   1              while(i < 247)
+ 567   1          {         //­µ????«× ¡A°Û§¹??¦A?        
+ 568   2                  k = AlARMMUSIC[i] + 7 * AlARMMUSIC[i+1] - 1;//¥h­µ²Å®¶??²v©Ò»Ý?Õu
+ 569   2                  Timer0_H = FREQH[k];
+ 570   2                  Timer0_L = FREQL[k];
+ 571   2                  Time = AlARMMUSIC[i+2];          //?©ç??
+ 572   2                  i = i + 3;
+ 573   2                  Song();
+ 574   2                      delayAlarm(Time);
+ 575   2         }
+ 576   1      }
+ 577          /*------------------------------------------------
+ 578                              ©w®É¾¹ªì©l¤Æ¤lµ{§Ç
+ 579          ------------------------------------------------*/
+ 580          void Init_Timer0(void)
+ 581          {
+ 582   1              TMOD |= 0x01;     //¨¨Ï¥Î¼Ò¦?2 (8 bits, ¥Ñ TH0 »P TL0 ¦@¦P±±¨î)¡A8¦ì©w®É¾¹¡A¨Ï¥Î"|"²Å¸¹¥i¥H¦b¨Ï¥Î¦h­Ó©w®É¾¹
+             -®É¤£¨ü¼vÅT
+ 583   1              //TH0=0x00;           //?©wªì­È
+ 584   1              //TL0=0x00;
+ 585   1              EA=1;            //?¤¤?¥´?
+ 586   1              ET0=1;           //©w?¾¹¤¤?¥´?
+ 587   1              //TR0=1;           //©w?¾¹??¥´?
+ 588   1      }
+ 589          void Init_Timer1(void)
+ 590          {
+ 591   1              TMOD |= 0x10;                   // ¨Ï¥Î¼Ò¦¡ 1 (16 bits, ¦U¥Ñ TH0 »P TL0 ±±¨î)¡A16¦ì©w®É¾¹¡A¨Ï¥Î"|"²Å¸¹¥i¥H¦b¨Ï¥Î¦h­Ó©w®
+             -É¾¹®É¤£¨ü¼vÅT             
+ 592   1              //TH1=256-200;        //?©wªì­È
+ 593   1              //TL1=256-200;   
+ 594   1              EA=1;                           // Á`¤¤Â_¶}Ãö
+ 595   1              ET1=1;                          // ©w®É¾¹¤¤Â_¥´¶}
+ 596   1              TR1=1;                          // ©w®É¾¹¶}Ãö¥´¶}
+ 597   1              PT1=1;
+ 598   1      }
+ 599          /*------------------------------------------------
+ 600                                  ¦ê¤f³q°Tªì©l¤Æ
+ 601          ------------------------------------------------*/
+ 602          void UART_Init(void)
+ 603          {
+ 604   1              SCON = 0x50;                    // ¨Ï¥Î¼Ò¦¡ 1¡A8 bits UART¡A¨Ï¯à±µ¦¬
+ 605   1              //PCON = 0x00;                  // ¨Ï SMOD = 0, but default is zero.
+ 606   1      
+ 607   1              TMOD = TMOD | 0x20;             // ¨Ï¥Î¼Ò¦¡ 2 (8 bits Auto Reload, ¥Ñ TH1 ±±¨î)¡A8¦ì©w®É¾¹¡A¨Ï¥Î"|"²Å¸¹¥i¥H¦b¨Ï¥Î¦h­
+             -Ó©w®É¾¹®É¤£¨ü¼vÅT
+ 608   1              TH1  = 0xFD;                    // 0xFD = 253¡AÀj²v 9600¡A´¹®¶ 11.0592M Hz
+ 609   1              TR1  = 1;                               // ©w®É¾¹¶}Ãö¥´¶}
+ 610   1      
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 11  
+
+ 611   1              RI   = 0;                               // ¥i¤£¼g¡A¦]¬° SCON = 0x50 ¤w¤º§t
+ 612   1              TI   = 0;       
+ 613   1      
+ 614   1              EA       = 1;                   // Á`¤¤Â_¶}Ãö
+ 615   1              ES       = 1;                           // UART¤¤Â_¶}Ãö
+ 616   1      }
+ 617          /*------------------------------------------------
+ 618                                  ©w®É¾¹¤¤Â_¤lµ{§Ç
+ 619          ------------------------------------------------*/
+ 620          void Timer0_isr(void) interrupt 1
+ 621          {
+ 622   1              //TR0 = 0;      
+ 623   1              TH0 = Timer0_H;
+ 624   1              TL0 = Timer0_L;
+ 625   1      
+ 626   1              SPK = !SPK;
+ 627   1              //TR0 = 1;
+ 628   1      }
+ 629          
+ 630          void Timer1_isr(void) interrupt 3
+ 631          {
+ 632   1              static unsigned int num;
+ 633   1              TH1=(65536-2000)/256;             //­«·s?­È 2ms
+ 634   1              TL1=(65536-2000)%256;
+ 635   1              
+ 636   1              Display(0,8);       // ?¥Î??ºÞ?´y
+ 637   1              num++;
+ 638   1              if(num==50)        //¤j­P100ms
+ 639   1              {
+ 640   2                      num=0;
+ 641   2                      ReadTimeFlag=1; //??§Ó¦ì¸m1
+ 642   2              }
+ 643   1      }
+ 644          /*------------------------------------------------
+ 645                                  UART¤¤Â_¤lµ{§Ç
+ 646          ------------------------------------------------*/
+ 647          void UART_isr(void) interrupt 4 using 2 // UART interrupt
+ 648          {
+ 649   1              unsigned char Temp;             //©w¸qÁ{®ÉÅÜ¶q 
+ 650   1              unsigned char i;
+ 651   1      
+ 652   1              if(RI == 1)                     //§PÂ_¬O±µ¦¬¤¤Â_²£¥Í
+ 653   1              {
+ 654   2                      RI = 0;                     //¼Ð»x¦ì²M¹s
+ 655   2      
+ 656   2                      Temp = SBUF;                //Åª¤J½w½Ä°Ïªº­È
+ 657   2      
+ 658   2                      if(Temp == 'C')
+ 659   2                      {
+ 660   3                              time_buf3[4] = 12;
+ 661   3                              time_buf3[5] = 34;
+ 662   3                              time_buf3[6] = 56;
+ 663   3                      }
+ 664   2                      else
+ 665   2                      {
+ 666   3                              time_buf2[i] = Temp & 0x0F;     //¥uÅª¨úASCII½Xªº«á¥|­Ó¦ì¤¸
+ 667   3                              i++;
+ 668   3                              if(i == 16)                 //³sÄò±µ¦¬16­Ó¦r²Å«H®§
+ 669   3                              {
+ 670   4                                      i = 0;
+ 671   4                                      SetFlag = 1;            //±µ¦¬§¹¦¨¼Ð»x¦ì¸m1
+ 672   4                              }
+C51 COMPILER V7.08   PROJECT3_MAIN                                                         06/17/2021 23:34:47 PAGE 12  
+
+ 673   3                              SBUF = Temp;                            //§â±µ¦¬¨ìªº­È¦A¶Ç¦^¹q¸£ºÝ
+ 674   3                      }
+ 675   2                      
+ 676   2              }
+ 677   1              if(TI)                                                  //¦pªG¬Oµo°e¼Ð»x¦ì«h²M¹s
+ 678   1                      TI=0;   
+ 679   1      }
+ 680          /*------------------------------------------------
+ 681                                                  «öÁä±½´y¨ç¼Æ¡Aªð¦^±½´yÁä­È
+ 682          ------------------------------------------------*/
+ 683          unsigned char KeyScan(void)
+ 684          {
+ 685   1              unsigned char keyvalue;
+ 686   1      
+ 687   1              if(KeyPort!=0xff)
+ 688   1              {
+ 689   2                      DelayMs(50);
+ 690   2      
+ 691   2                      if(KeyPort!=0xff)
+ 692   2                      {
+ 693   3                              keyvalue = KeyPort;
+ 694   3                              //while(KeyPort!=0xff);                 // For Push Bottom Once
+ 695   3                              switch(keyvalue)
+ 696   3                              {
+ 697   4                                      case 0xfe:return 1;break;
+ 698   4                                      case 0xfd:return 2;break;
+ 699   4                                      case 0xfb:return 3;break;
+ 700   4                                      case 0xf7:return 4;break;
+ 701   4                                      case 0xef:return 5;break;
+ 702   4                                      case 0xdf:return 6;break;
+ 703   4                                      case 0xbf:return 7;break;
+ 704   4                                      case 0x7f:return 8;break;
+ 705   4                                      default:return 0;break;
+ 706   4                              }
+ 707   3                              while(KeyPort!=0xff);
+ 708   3                      }
+ 709   2              }
+ 710   1              return 0;
+ 711   1      }
+ 712          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1320    ----
+   CONSTANT SIZE    =    569    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     46       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
